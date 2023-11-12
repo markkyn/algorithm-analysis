@@ -113,6 +113,7 @@ int main(int argc, char *argv[])
     // Registered Containers
     fscanf(input_fp, "%d", &registered_len);
     registered_ptr = malloc(registered_len * sizeof(Container_t));
+    unsorted_registered_ptr = malloc(registered_len * sizeof(Container_t));
 
     for (int i = 0; i < registered_len; i++)
     {
@@ -136,11 +137,14 @@ int main(int argc, char *argv[])
 
         Container_t container = {
             .height = height,
-            .cnpj = cnpj};
+            .cnpj = cnpj,
+            .priority = 3 // default value (low priority)
+        };
 
         strncpy(container.index, index, sizeof(container.index));
 
         registered_ptr[i] = container;
+        unsorted_registered_ptr[i] = container;
     }
 
     // Selected Containers
@@ -169,7 +173,9 @@ int main(int argc, char *argv[])
 
         Container_t container = {
             .height = height,
-            .cnpj = cnpj};
+            .cnpj = cnpj,
+            .priority = 3 // default value (low priority)
+        };
 
         strncpy(container.index, index, sizeof(container.index));
 
@@ -178,6 +184,9 @@ int main(int argc, char *argv[])
 
     merge_sort(registered_ptr, 0, registered_len - 1, INDEX);
     merge_sort(selected_ptr, 0, selected_len - 1, INDEX);
+
+    for (int i = 0; i < registered_len; i++)
+        printf("%s - %d\n", registered_ptr[i].index, registered_ptr[i].priority);
 
     // Priority Definition
     // TODO: Provavelmente Optimizável: O(n²)
@@ -188,31 +197,69 @@ int main(int argc, char *argv[])
         {
             if (strcmp(selected_ptr[i].index, registered_ptr[j].index) == 0)
             {
-                double divergencia = (1 - ((float)selected_ptr[i].height / (float)registered_ptr[j].height)) * -100;
 
-                printf("Container %c = %d - Container %c = %d - divergencia = %f\n",
+                double diff = (abs((float)registered_ptr[j].height - (float)selected_ptr[i].height) / (float)registered_ptr[j].height) * 100;
+
+                printf("Container %c = %d - Container %c = %d - diff = %f\n",
                        registered_ptr[j].index[0], registered_ptr[j].height,
-                       selected_ptr[i].index[0]  , selected_ptr[i].height,
-                       divergencia);
+                       selected_ptr[i].index[0], selected_ptr[i].height,
+                       diff);
 
+                // Validations
                 if (!validate_cnpj(selected_ptr[i].cnpj, registered_ptr[j].cnpj))
+                {
                     selected_ptr[i].priority = 1;
-                else if (divergencia > 10 || divergencia < -90)
+                    registered_ptr[j].priority = 1;
+                }
+                else if (diff > 10)
+                {
                     selected_ptr[i].priority = 2;
+                    registered_ptr[j].priority = 2;
+                }
 
                 last = j;
-                j = registered_len; // para de percorrer Register
+                j = registered_len; // stop j-loop iteration
             }
         }
     }
 
-
-    for (int i = 0; i < unsorted_registered_ptr; i++){
-        
+    // Set Priority to Unsorted Registered Array
+    for (int i = 0; i < registered_len; i++)
+    {
+        for (int j = 0; j < registered_len; j++)
+        {
+            if (strcmp(unsorted_registered_ptr[i].index, registered_ptr[j].index) == 0)
+            {
+                unsorted_registered_ptr[i].priority = registered_ptr[j].priority;
+            }
+        }
     }
 
-    fprintf(output_fp, "test");
-    // Printing Sorted Arrays.
+    merge_sort(unsorted_registered_ptr, 0, registered_len - 1, PRIORITY);
+
+    // File Printing Priority Sorted Array
     for (int i = 0; i < registered_len; i++)
-        printf("%s  -  %s - prio: %d\n", registered_ptr[i].index, selected_ptr[i].index, selected_ptr[i].priority);
+    {
+        printf("%s - %d\n", unsorted_registered_ptr[i].index, unsorted_registered_ptr[i].priority);
+        for (int j = 0; j < selected_len; j++)
+        {
+            if (strcmp(unsorted_registered_ptr[i].index, selected_ptr[j].index) == 0)
+            {
+                if (unsorted_registered_ptr[i].priority == 1)
+                    fprintf(output_fp,"%s: %ld<->%ld\n",
+                            unsorted_registered_ptr[i].index,
+                            unsorted_registered_ptr[i].cnpj, selected_ptr[j].cnpj
+                    );
+                else if (unsorted_registered_ptr[i].priority == 2)
+                    fprintf(output_fp, "%s: %dkg (%d%%)\n",
+                            unsorted_registered_ptr[i].index,
+                            abs(unsorted_registered_ptr[i].height - selected_ptr[j].height),
+                            (int)ceil( 
+                                (float)  ( abs(unsorted_registered_ptr[i].height - selected_ptr[j].height) )
+                                /        ( unsorted_registered_ptr[i].height * 0.01)
+                            )
+                    );
+            }
+        }
+    }
 }
