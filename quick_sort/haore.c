@@ -13,11 +13,11 @@ void swap(int32_t *array_ptr, int source_pos, int dest_pos)
     array_ptr[source_pos] = temp;
 }
 
-int32_t haore(int32_t *vector, int32_t i, int32_t j) // i = first position ; j = last position
+int32_t haore(int32_t *vector, int32_t low, int32_t high) // i = first position ; j = last position
 {
 
     // Arbitrary Pivot.
-    int32_t P = vector[i], x = i - 1, y = j + 1;
+    int32_t P = vector[low], x = low - 1, y = high + 1;
 
     while (true)
     {
@@ -27,16 +27,12 @@ int32_t haore(int32_t *vector, int32_t i, int32_t j) // i = first position ; j =
             ;
         if (x < y)
             swap(vector, x, y);
-        else {
-            printf("%d\n", y);
-            return y; // Duvida: existe algum motivo pelo retorno do y e nao do x
-
-         }
-
+        else
+            return y;
     }
 }
 
-void recursive_quicksort(int32_t *vector, uint32_t start, uint32_t end)
+void recursive_quicksort(int32_t *vector, int32_t start, int32_t end)
 {
 
     if (start < end)
@@ -68,17 +64,18 @@ int main(int argc, char *argv[])
     for (int i = 0; i < vectors_count; i++)
     {
         fscanf(input_fp, "%d", &vector_len);
+
         vector_ptr = malloc(vector_len * sizeof(int32_t));
 
         for (int j = 0; j < vector_len; j++)
             fscanf(input_fp, "%d", &vector_ptr[j]);
 
-        printf("oi\n");
-        recursive_quicksort(vector_ptr, 0, vector_len-1);
+        recursive_quicksort(vector_ptr, 0, vector_len - 1);
 
         for (int j = 0; j < vector_len; j++)
+        {
             fprintf(output_fp, "%d ", vector_ptr[j]);
-
+        }
         fprintf(output_fp, "\n");
         free(vector_ptr);
     }
