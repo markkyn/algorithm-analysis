@@ -48,6 +48,8 @@ Exemplo:
 
 ## Saida Esperada:
 
+A saída segue a ordem de containers cadastrados, seguindo pela prioridade.
+
     KTAJ0603546: 20.500.522/6013-58<->20.500.522/6113-58
     IKQZ7582839: 51.743.446/1183-18<->51.743.446/1113-18
     QOZJ7913219: 2900kg (21%)
@@ -58,3 +60,6 @@ Exemplo:
 serão realizados 2 merge sorts.
 
   - Um para ordenar os 
+
+
+## Análise de Complexidade:
