@@ -57,9 +57,15 @@ A saída segue a ordem de containers cadastrados, seguindo pela prioridade.
 
 
 ## Solução:
-serão realizados 2 merge sorts.
 
-  - Um para ordenar os 
+### Passo 1:
+Captura e Alocação dos Containers na memória. 
+
+### Passo 2:
+Ordenação (merge_sort) dos Containers pelo seu Index.
+
+### Passo 3:
+
 
 
 ## Análise de Complexidade:
