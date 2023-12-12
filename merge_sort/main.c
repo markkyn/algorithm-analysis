@@ -21,6 +21,10 @@ typedef struct
     uint64_t cnpj;
     uint32_t height;
     int order;
+
+    bool valid_cnpj;
+    int diff_weight;
+    int diff_percentage;
 } Container_t;
 
 bool validate_cnpj(uint64_t cnpj_1, uint64_t cnpj_2)
@@ -35,7 +39,7 @@ int8_t diff_calc(uint32_t weight_1, uint32_t weight_2)
     return ((float) weight_2 / (float)weight_1 * 100 ) - 100;
 }
 
-Container_t *merge(Container_t *array_ptr, int start_pos, int middle, int end_pos, SortedBy_t sorted_by)
+void merge(Container_t *array_ptr, int start_pos, int middle, int end_pos, SortedBy_t sorted_by)
 {
     // Left Array = start to middle
     // Rigth Array = middle + 1 (curr) to end
@@ -197,35 +201,39 @@ int main(int argc, char *argv[])
     merge_sort(registered_ptr, 0, registered_len - 1, INDEX);
     merge_sort(selected_ptr, 0, selected_len - 1, INDEX);
 
-    // Validacao de CPF e Setagem de Ordem de precedëncia
+    // Validacao de CPF, Setagem de Ordem de precedência e Calculo de diferença;
     for (int i = 0; i < selected_len; i++)
     {
         int j = i;
         while (strcmp(selected_ptr[i].index, registered_ptr[j++].index) != 0);
         
-        bool validation = validate_cnpj(selected_ptr[i].cnpj, registered_ptr[j].cnpj);
-
         selected_ptr[i].order = registered_ptr[j].order;
 
-        if (!validation)
-            fprintf(output_fp, "x\n");
+        bool valido = validate_cnpj(selected_ptr[i].cnpj, registered_ptr[j].cnpj);
+
+        selected_ptr[i].valid_cnpj = valido;
+        
+        int diff_percentage = diff_calc(registered_ptr[j].height, selected_ptr[i].height);
+        if( diff_percentage > 10 )
+        {
+            selected_ptr[i].diff_percentage = diff_percentage;
+            selected_ptr[i].diff_weight = abs(registered_ptr[j].height - selected_ptr[i].height);
+        }
 
     }
 
-    // i = selected ; j = registered
+    merge_sort(selected_ptr, 0, selected_len - 1, ORDER);
+
     for (int i = 0; i < selected_len; i++)
     {
-        int j = i;
-        while (strcmp(selected_ptr[i].index, registered_ptr[j].index) != 0)
-            j++;
+        if(selected_ptr[i].valid_cnpj == true)
+            fprintf(output_fp,"%s: %lld\n", selected_ptr[i].index, selected_ptr[i].cnpj);
+    }
 
-        int8_t percentage = diff_calc(registered_ptr[j].height, selected_ptr[i].height);
-        if (percentage > 10)
-            fprintf(output_fp,
-                    "%s: %d (%d%%)\n",
-                    selected_ptr[i].index,
-                    selected_ptr[i].height - registered_ptr[j].height,
-                    percentage);
+    for (int i = 0; i < selected_len; i++)
+    {
+        if(selected_ptr[i].diff_percentage > 10)
+            fprintf(output_fp,"%s: %d (%d\%)\n", selected_ptr[i].index, selected_ptr[i].diff_weight, selected_ptr[i].diff_percentage);
     }
 
     free(registered_ptr);
