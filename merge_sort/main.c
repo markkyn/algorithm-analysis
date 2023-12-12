@@ -29,9 +29,7 @@ typedef struct
 
 bool validate_cnpj(uint64_t cnpj_1, uint64_t cnpj_2)
 {
-    if (cnpj_1 == cnpj_2)
-        return true;
-    return false;
+    return (cnpj_1 == cnpj_2)
 }
 
 int8_t diff_calc(uint32_t weight_1, uint32_t weight_2)
