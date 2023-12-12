@@ -11,7 +11,7 @@ typedef enum
     INDEX,
     CNPJ,
     HEIGHT,
-    PRIORITY
+    ORDER
 
 } SortedBy_t;
 
@@ -20,7 +20,7 @@ typedef struct
     char index[12];
     uint64_t cnpj;
     uint32_t height;
-    uint8_t priority; // Smaller = More Priority
+    int order;
 } Container_t;
 
 bool validate_cnpj(uint64_t cnpj_1, uint64_t cnpj_2)
@@ -28,6 +28,11 @@ bool validate_cnpj(uint64_t cnpj_1, uint64_t cnpj_2)
     if (cnpj_1 == cnpj_2)
         return true;
     return false;
+}
+
+int8_t diff_calc(uint32_t weight_1, uint32_t weight_2)
+{
+    return ((float) weight_2 / (float)weight_1 * 100 ) - 100;
 }
 
 Container_t *merge(Container_t *array_ptr, int start_pos, int middle, int end_pos, SortedBy_t sorted_by)
@@ -40,8 +45,6 @@ Container_t *merge(Container_t *array_ptr, int start_pos, int middle, int end_po
     Container_t *sorted_subarr = (Container_t *)malloc(sizeof(Container_t) * subarr_len);
 
     int i = start_pos, j = middle + 1, k = 0;
-    //uint32_t nl = middle - start_pos + 1; // Left  array len
-    //uint32_t nr = end_pos - middle;       // Right array len
 
     while (i <= middle && j <= end_pos)
     {
@@ -69,8 +72,8 @@ Container_t *merge(Container_t *array_ptr, int start_pos, int middle, int end_po
                 sorted_subarr[k++] = array_ptr[j++];
             break;
 
-        case PRIORITY:
-            if (array_ptr[i].priority < array_ptr[j].priority)
+        case ORDER:
+            if (array_ptr[i].order < array_ptr[j].order)
                 sorted_subarr[k++] = array_ptr[i++];
             else
                 sorted_subarr[k++] = array_ptr[j++];
@@ -122,7 +125,6 @@ int main(int argc, char *argv[])
         printf("Não foi possivel fazer a leitura do arquivo\n");
 
     registered_ptr = malloc(registered_len * sizeof(Container_t));
-
     for (int i = 0; i < registered_len; i++)
     {
         char index[12];
@@ -147,7 +149,7 @@ int main(int argc, char *argv[])
         Container_t container = {
             .height = height,
             .cnpj = cnpj,
-            .priority = 3 // default value (low priority)
+            .order = i
         };
 
         strncpy(container.index, index, sizeof(container.index));
@@ -184,8 +186,7 @@ int main(int argc, char *argv[])
 
         Container_t container = {
             .height = height,
-            .cnpj = cnpj,
-            .priority = 3 // default value (low priority)
+            .cnpj = cnpj
         };
 
         strncpy(container.index, index, sizeof(container.index));
@@ -196,5 +197,37 @@ int main(int argc, char *argv[])
     merge_sort(registered_ptr, 0, registered_len - 1, INDEX);
     merge_sort(selected_ptr, 0, selected_len - 1, INDEX);
 
+    // Validacao de CPF e Setagem de Ordem de precedëncia
+    for (int i = 0; i < selected_len; i++)
+    {
+        int j = i;
+        while (strcmp(selected_ptr[i].index, registered_ptr[j++].index) != 0);
+        
+        bool validation = validate_cnpj(selected_ptr[i].cnpj, registered_ptr[j].cnpj);
 
+        selected_ptr[i].order = registered_ptr[j].order;
+
+        if (!validation)
+            fprintf(output_fp, "x\n");
+
+    }
+
+    // i = selected ; j = registered
+    for (int i = 0; i < selected_len; i++)
+    {
+        int j = i;
+        while (strcmp(selected_ptr[i].index, registered_ptr[j].index) != 0)
+            j++;
+
+        int8_t percentage = diff_calc(registered_ptr[j].height, selected_ptr[i].height);
+        if (percentage > 10)
+            fprintf(output_fp,
+                    "%s: %d (%d%%)\n",
+                    selected_ptr[i].index,
+                    selected_ptr[i].height - registered_ptr[j].height,
+                    percentage);
+    }
+
+    free(registered_ptr);
+    free(selected_ptr);
 }
