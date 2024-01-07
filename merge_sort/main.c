@@ -19,6 +19,7 @@ typedef struct
 {
     char index[12];
     uint64_t cnpj;
+    uint64_t reg_cnpj;
     uint32_t height;
     int order;
 
@@ -27,14 +28,9 @@ typedef struct
     int diff_percentage;
 } Container_t;
 
-bool validate_cnpj(uint64_t cnpj_1, uint64_t cnpj_2)
-{
-    return (cnpj_1 == cnpj_2)
-}
-
 int8_t diff_calc(uint32_t weight_1, uint32_t weight_2)
 {
-    return ((float) weight_2 / (float)weight_1 * 100 ) - 100;
+    return ((float)weight_2 / (float)weight_1 * 100) - 100;
 }
 
 void merge(Container_t *array_ptr, int start_pos, int middle, int end_pos, SortedBy_t sorted_by)
@@ -151,8 +147,7 @@ int main(int argc, char *argv[])
         Container_t container = {
             .height = height,
             .cnpj = cnpj,
-            .order = i
-        };
+            .order = i};
 
         strncpy(container.index, index, sizeof(container.index));
 
@@ -188,8 +183,7 @@ int main(int argc, char *argv[])
 
         Container_t container = {
             .height = height,
-            .cnpj = cnpj
-        };
+            .cnpj = cnpj};
 
         strncpy(container.index, index, sizeof(container.index));
 
@@ -203,35 +197,49 @@ int main(int argc, char *argv[])
     for (int i = 0; i < selected_len; i++)
     {
         int j = i;
-        while (strcmp(selected_ptr[i].index, registered_ptr[j++].index) != 0);
-        
+        while (strcmp(selected_ptr[i].index, registered_ptr[j].index) != 0)
+            j++;
+
         selected_ptr[i].order = registered_ptr[j].order;
 
-        bool valido = validate_cnpj(selected_ptr[i].cnpj, registered_ptr[j].cnpj);
+        selected_ptr[i].valid_cnpj = selected_ptr[i].cnpj == registered_ptr[j].cnpj;
+        selected_ptr[i].reg_cnpj = registered_ptr[j].cnpj;
 
-        selected_ptr[i].valid_cnpj = valido;
-        
         int diff_percentage = diff_calc(registered_ptr[j].height, selected_ptr[i].height);
-        if( diff_percentage > 10 )
+        if (diff_percentage > 10)
         {
             selected_ptr[i].diff_percentage = diff_percentage;
             selected_ptr[i].diff_weight = abs(registered_ptr[j].height - selected_ptr[i].height);
         }
-
     }
 
     merge_sort(selected_ptr, 0, selected_len - 1, ORDER);
 
     for (int i = 0; i < selected_len; i++)
     {
-        if(selected_ptr[i].valid_cnpj == true)
-            fprintf(output_fp,"%s: %lld\n", selected_ptr[i].index, selected_ptr[i].cnpj);
+        if (!selected_ptr[i].valid_cnpj)
+        {
+                fprintf(output_fp, "%s: %02ld.%03ld.%03ld/%04ld-%02ld<->%02ld.%03ld.%03ld/%04ld-%02ld\n",
+                        selected_ptr[i].index,
+                        // CNPJ Selected
+                        (selected_ptr[i].cnpj / 1000000000000), // 10^12
+                        (selected_ptr[i].cnpj / 1000000000) % 1000,
+                        (selected_ptr[i].cnpj / 1000000) % 1000,
+                        (selected_ptr[i].cnpj / 1000) % 1000,
+                        (selected_ptr[i].cnpj % 1000),
+                        // CNPJ Registered
+                        (selected_ptr[i].reg_cnpj / 1000000000000), // 10^12
+                        (selected_ptr[i].reg_cnpj / 1000000000) % 1000,
+                        (selected_ptr[i].reg_cnpj / 1000000) % 1000,
+                        (selected_ptr[i].reg_cnpj / 100) % 1000,
+                        (selected_ptr[i].reg_cnpj % 100));
+        }
     }
 
     for (int i = 0; i < selected_len; i++)
     {
-        if(selected_ptr[i].diff_percentage > 10)
-            fprintf(output_fp,"%s: %d (%d\%)\n", selected_ptr[i].index, selected_ptr[i].diff_weight, selected_ptr[i].diff_percentage);
+        if (selected_ptr[i].diff_percentage > 10)
+            fprintf(output_fp, "%s: %dkg (%d%\)\n", selected_ptr[i].index, selected_ptr[i].diff_weight, selected_ptr[i].diff_percentage);
     }
 
     free(registered_ptr);

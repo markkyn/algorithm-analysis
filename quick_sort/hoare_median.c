@@ -13,8 +13,23 @@ void swap(int32_t *array_ptr, int source_pos, int dest_pos)
     array_ptr[source_pos] = temp;
 }
 
-int32_t haore(int32_t *vector, int32_t low, int32_t high) // i = first position ; j = last position
+int32_t median(int a, int b, int c, int32_t n)
 {
+    if ((a >= b && a <= c) || (a <= b && a >= c))
+        return n / 4; // a
+    else if ((b >= a && b <= c) || (b <= a && b >= c))
+        return n / 2; // b
+    else
+        return 3 * n / 4; // c
+}
+
+int32_t haore_median(int32_t *vector, int32_t low, int32_t high) // i = first position ; j = last position
+{
+    int32_t n = high - low + 1;
+
+    int32_t a = vector[n / 4], b = vector[n / 2], c = vector[(3 * n) / 4];
+
+    int32_t k = median(a, b, c, n);
 
     // Arbitrary Pivot.
     int32_t P = vector[low], x = low - 1, y = high + 1;
@@ -37,10 +52,10 @@ void recursive_quicksort(int32_t *vector, int32_t start, int32_t end)
 
     if (start < end)
     {
-        int32_t pivot = haore(vector, start, end);
+        int32_t pivot = haore_median(vector, start, end);
         // sorting by partitioning;
 
-        recursive_quicksort(vector, start, pivot - 1);
+        recursive_quicksort(vector, start, pivot);
         recursive_quicksort(vector, pivot + 1, end);
     }
     return; // useless return (end recursion);
