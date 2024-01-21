@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void swap(int32_t *V, uint32_t i, uint32_t j)
+void swap(int32_t *V, int32_t i, int32_t j)
 {
     int32_t t = V[i];
 
@@ -11,24 +11,27 @@ void swap(int32_t *V, uint32_t i, uint32_t j)
     V[j] = t;
 }
 
-uint32_t left(uint32_t i)
+int32_t left(int32_t i)
 {
     return (2 * i) + 1;
 }
 
-uint32_t right(uint32_t i)
+int32_t right(int32_t i)
 {
     return (2 * i) + 2;
 }
 
-uint32_t parent(uint32_t i)
+int32_t parent(int32_t i)
 {
+    if (i <= 0)
+        return -1;
+
     return (i - 1) / 2;
 }
 
-void heapify_min(int32_t *V, uint32_t n, uint32_t i)
+void heapify_min(int32_t *V, int32_t n, int32_t i)
 {
-    uint32_t iP = i, iL = left(i), iR = right(i);
+    int32_t iP = i, iL = left(i), iR = right(i);
 
     if (iL < n && V[iL] < V[iP])
         iP = iL;
@@ -43,13 +46,15 @@ void heapify_min(int32_t *V, uint32_t n, uint32_t i)
     }
 }
 
-void heapify_max(int32_t *V, uint32_t n, uint32_t i)
+void heapify_max(int32_t *V, int32_t n, int32_t i)
 {
+    // Heapfy Max downwards
+
     // V = vector
     // n = vector len
     // i = current index
 
-    uint32_t iP = i, iL = left(i), iR = right(i);
+    int32_t iP = i, iL = left(i), iR = right(i);
 
     if (iL < n && V[iL] > V[iP])
         iP = iL;
@@ -64,34 +69,63 @@ void heapify_max(int32_t *V, uint32_t n, uint32_t i)
     }
 }
 
-void insert_max(int32_t *heap, uint32_t *heap_len, uint8_t byte)
+void heapify_max_upwards(int32_t *V, int32_t n, int32_t i)
+{
+    // Heapify Max Upwards
+
+    if (i < 0)
+        return;
+
+    int32_t iP = i, iL = left(i), iR = right(i);
+
+    if (iL < n && V[iL] > V[iP])
+        iP = iL;
+
+    if (iR < n && V[iR] > V[iP])
+        iP = iR;
+
+    if (iP != i)
+    {
+        swap(V, i, iP);
+        heapify_max_upwards(V, n, parent(i));
+    }
+}
+
+void insert(int32_t *heap, int32_t *heap_len, uint8_t byte)
 {
     heap[*heap_len] = byte;
-
-    // heapify_max(heap, *heap_len, 0);
-
     (*heap_len)++;
+}
+
+void insert_max(int32_t *heap, int32_t *heap_len, uint8_t byte)
+{
+    heap[*heap_len] = byte;
+    (*heap_len)++;
+
+    printf("\theap_len= %d\tparent = %d\n", (*heap_len), parent(*heap_len));
+    heapify_max_upwards(heap, *heap_len, parent((*heap_len) - 1));
+    printf("\t%X Inserido\n", byte);
 };
 
-void insert_min(int32_t *heap, uint32_t heap_len, uint8_t byte)
+void insert_min(int32_t *heap, int32_t heap_len, uint8_t byte)
 {
     heap[heap_len] = byte;
 
     heapify_min(heap, heap_len, 0);
 }
 
-int32_t smallest(int32_t *heap, uint32_t heap_len)
+int32_t smallest(int32_t *heap, int32_t heap_len)
 {
     // return smallest index
 }
 
-void build_heap(int32_t *V, uint32_t n)
+void build_heap(int32_t *V, int32_t n)
 {
     int32_t iP = parent(n - 1);
 
     while (iP >= 0)
     {
-        uint32_t iL = left(iP), iR = right(iP);
+        int32_t iL = left(iP), iR = right(iP);
 
         heapify_max(V, n, iP);
         heapify_max(V, n, iL);
@@ -100,6 +134,23 @@ void build_heap(int32_t *V, uint32_t n)
         iP--;
     }
 }
+
+void build_heap_min(int32_t *V, int32_t n)
+{
+    int32_t iP = parent(n - 1);
+
+    while (iP >= 0)
+    {
+        int32_t iL = left(iP), iR = right(iP);
+
+        heapify_min(V, n, iP);
+        heapify_min(V, n, iL);
+        heapify_min(V, n, iR);
+
+        iP--;
+    }
+}
+
 
 void heap_sort_max(int32_t *V, int32_t n)
 {
@@ -115,7 +166,7 @@ void heap_sort_max(int32_t *V, int32_t n)
 
 void heap_sort_min(int32_t *V, int32_t n)
 {
-    build_heap(V, n);
+    build_heap_min(V, n);
 
     for (int32_t i = n - 1; i > 0; i--)
     {
@@ -140,9 +191,10 @@ int main(int argc, char *argv[])
     int n_total, seg_len;
 
     int32_t *heap = malloc(512 * sizeof(uint8_t));
-    uint32_t heap_len = 0;
+    int32_t heap_len = 0;
 
-    uint32_t next = 0; // next to be processed
+    // next to be processed and process index
+    int32_t next = 1, l = 0; 
 
     fscanf(input_fp, "%d %d", &n_total, &seg_len);
     // Iteração Geral
@@ -154,30 +206,27 @@ int main(int argc, char *argv[])
             int id, len_packet;
             fscanf(input_fp, "%d %d", &id, &len_packet);
 
-            uint32_t byte;
+            int32_t byte;
 
             // Iteração pelo Pacote
-            printf("Leitura:\n\t");
             for (int k = 0; k < len_packet; k++)
             {
                 fscanf(input_fp, "%X", &byte);
-                // insert_max(heap, &heap_len, byte);
-                printf("%X ", byte);
+                //printf("Inserção de: %X\n", byte);
+                insert(heap, &heap_len, byte);
             }
-
-            heap_sort_max(heap, heap_len);
-
-            printf
-            for()
-
-            int x = 0;
-            while (smallest(heap, heap_len) == next)
-            {
-                printf()
-
-                next++;
-            }
-            printf("\n");
         }
+
+        heap_sort_max(heap, heap_len);
+
+        fprintf(output_fp, "%d: ", i / seg_len);
+        while (heap[l] == next)
+        {
+            fprintf(output_fp, "%02X ", heap[l]);
+
+            next++;
+            l++;
+        }
+        fprintf(output_fp, "\n");
     }
 }
