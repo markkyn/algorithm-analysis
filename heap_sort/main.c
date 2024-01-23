@@ -114,10 +114,6 @@ void insert_min(int32_t *heap, int32_t heap_len, uint8_t byte)
     heapify_min(heap, heap_len, 0);
 }
 
-int32_t smallest(int32_t *heap, int32_t heap_len)
-{
-    // return smallest index
-}
 
 void build_heap(int32_t *V, int32_t n)
 {
@@ -190,7 +186,7 @@ int main(int argc, char *argv[])
 
     int n_total, seg_len;
 
-    int32_t *heap = malloc(512 * sizeof(uint8_t));
+    int32_t *heap = malloc(15000 * 512 * sizeof(uint8_t));
     int32_t heap_len = 0;
 
     // next to be processed and process index
