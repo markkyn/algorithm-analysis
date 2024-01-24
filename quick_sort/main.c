@@ -87,20 +87,7 @@ int32_t hoare_median(int32_t *vector, int32_t low, int32_t high) // i = first po
 
     swap(vector, low, k);
 
-    // Median-of-three Pivot.
-    int32_t P = vector[low], x = low - 1, y = high + 1;
-
-    while (true)
-    {
-        while (vector[++x] < P)
-            ;
-        while (vector[--y] > P)
-            ;
-        if (x >= y)
-            return y;
-
-        swap(vector, x, y);
-    }
+    return hoare_partition(vector, low, high);
 }
 
 int32_t hoare_rand(int32_t *vector, int32_t low, int32_t high)
@@ -228,17 +215,19 @@ int32_t insertion_sort(Sort_t *sort, int32_t n)
     int i, j;
     Sort_t chave;
 
-    for (i = 1; i < n; i++) {
+    for (i = 1; i < n; i++)
+    {
         chave = sort[i];
         j = i - 1;
 
-        while (j >= 0 && sort[j].call_count > chave.call_count) {
+        while (j >= 0 && sort[j].call_count > chave.call_count)
+        {
             sort[j + 1] = sort[j];
             j = j - 1;
         }
         sort[j + 1] = chave;
     }
-    return 0; 
+    return 0;
 }
 
 /* ----------------------- */
@@ -318,16 +307,12 @@ int main(int argc, char *argv[])
         recursive_quicksort(ha_ptr, 0, vector_len - 1, HA);
         sort[HA].call_count = call_count;
 
-        for (int j = 0; j < vector_len; j++)
-            printf("%d ", ha_ptr[j]);
-        printf("\n");
-
-        fprintf(output_fp, "%d: N(%d) ", i, vector_len);
+        fprintf(output_fp, "%d: N(%d)", i, vector_len);
 
         insertion_sort(sort, 6);
 
         for (int j = 0; j < 6; j++)
-            fprintf(output_fp, "%s(%d) ", sort[j].type, sort[j].call_count);
+            fprintf(output_fp, " %s(%d)", sort[j].type, sort[j].call_count);
 
         fprintf(output_fp, "\n");
     }

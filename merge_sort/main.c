@@ -11,7 +11,8 @@ typedef enum
     INDEX,
     CNPJ,
     HEIGHT,
-    ORDER
+    ORDER,
+    DIFF
 
 } SortedBy_t;
 
@@ -28,9 +29,12 @@ typedef struct
     int diff_percentage;
 } Container_t;
 
-int8_t diff_calc(uint32_t weight_1, uint32_t weight_2)
+int32_t diff_calc(int32_t weight_1, int32_t weight_2)
 {
-    return ((float)weight_2 / (float)weight_1 * 100) - 100;
+    float diff = abs((float)weight_1 - (float)weight_2);
+    float result = (diff / weight_1) * 100;
+
+    return round(result);
 }
 
 void merge(Container_t *array_ptr, int start_pos, int middle, int end_pos, SortedBy_t sorted_by)
@@ -65,6 +69,13 @@ void merge(Container_t *array_ptr, int start_pos, int middle, int end_pos, Sorte
 
         case HEIGHT:
             if (array_ptr[i].height < array_ptr[j].height)
+                sorted_subarr[k++] = array_ptr[i++];
+            else
+                sorted_subarr[k++] = array_ptr[j++];
+            break;
+
+        case DIFF:
+            if (array_ptr[i].diff_percentage < array_ptr[j].diff_percentage)
                 sorted_subarr[k++] = array_ptr[i++];
             else
                 sorted_subarr[k++] = array_ptr[j++];
@@ -206,11 +217,8 @@ int main(int argc, char *argv[])
         selected_ptr[i].reg_cnpj = registered_ptr[j].cnpj;
 
         int diff_percentage = diff_calc(registered_ptr[j].height, selected_ptr[i].height);
-        if (diff_percentage > 10)
-        {
-            selected_ptr[i].diff_percentage = diff_percentage;
-            selected_ptr[i].diff_weight = abs(registered_ptr[j].height - selected_ptr[i].height);
-        }
+        selected_ptr[i].diff_percentage = diff_percentage;
+        selected_ptr[i].diff_weight = abs(registered_ptr[j].height - selected_ptr[i].height);
     }
 
     merge_sort(selected_ptr, 0, selected_len - 1, ORDER);
@@ -219,24 +227,26 @@ int main(int argc, char *argv[])
     {
         if (!selected_ptr[i].valid_cnpj)
         {
-                fprintf(output_fp, "%s: %02ld.%03ld.%03ld/%04ld-%02ld<->%02ld.%03ld.%03ld/%04ld-%02ld\n",
-                        selected_ptr[i].index,
-                        // CNPJ Selected
-                        (selected_ptr[i].cnpj / 1000000000000), // 10^12
-                        (selected_ptr[i].cnpj / 1000000000) % 1000,
-                        (selected_ptr[i].cnpj / 1000000) % 1000,
-                        (selected_ptr[i].cnpj / 1000) % 1000,
-                        (selected_ptr[i].cnpj % 1000),
-                        // CNPJ Registered
-                        (selected_ptr[i].reg_cnpj / 1000000000000), // 10^12
-                        (selected_ptr[i].reg_cnpj / 1000000000) % 1000,
-                        (selected_ptr[i].reg_cnpj / 1000000) % 1000,
-                        (selected_ptr[i].reg_cnpj / 100) % 1000,
-                        (selected_ptr[i].reg_cnpj % 100));
+            fprintf(output_fp, "%s: %02ld.%03ld.%03ld/%04ld-%02ld<->%02ld.%03ld.%03ld/%04ld-%02ld\n",
+                    selected_ptr[i].index,
+                    // CNPJ Selected
+                    (selected_ptr[i].reg_cnpj / 1000000000000), // 10^12
+                    (selected_ptr[i].reg_cnpj / 1000000000) % 1000,
+                    (selected_ptr[i].reg_cnpj / 1000000) % 1000,
+                    (selected_ptr[i].reg_cnpj / 100) % 10000,
+                    (selected_ptr[i].reg_cnpj % 100),
+                    // CNPJ Registered
+                    (selected_ptr[i].cnpj / 1000000000000), // 10^12
+                    (selected_ptr[i].cnpj / 1000000000) % 1000,
+                    (selected_ptr[i].cnpj / 1000000) % 1000,
+                    (selected_ptr[i].cnpj / 100) % 10000,
+                    (selected_ptr[i].cnpj % 100));
         }
     }
 
-    for (int i = 0; i < selected_len; i++)
+    merge_sort(selected_ptr, 0, selected_len - 1, DIFF);
+
+    for (int i = selected_len-1; i >=0; i--)
     {
         if (selected_ptr[i].diff_percentage > 10)
             fprintf(output_fp, "%s: %dkg (%d%\)\n", selected_ptr[i].index, selected_ptr[i].diff_weight, selected_ptr[i].diff_percentage);
