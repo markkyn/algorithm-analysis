@@ -2,6 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef struct 
+{
+    int32_t order;
+    int32_t *data_ptr;
+    int32_t  data_len;
+
+} Packet;
+
+
 void swap(int32_t *V, uint32_t i, uint32_t j)
 {
     int32_t t = V[i];
